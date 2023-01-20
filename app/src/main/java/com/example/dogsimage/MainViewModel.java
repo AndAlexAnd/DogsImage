@@ -50,8 +50,8 @@ public class MainViewModel extends AndroidViewModel {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Consumer<DogImage>() {
                     @Override
-                    public void accept(DogImage dogImage) throws Throwable {
-                        dogImageMutableLiveData.setValue(dogImage);
+                    public void accept(DogImage image) throws Throwable {
+                        dogImageMutableLiveData.setValue(image);
                     }
                 }, new Consumer<Throwable>() {
                     @Override
