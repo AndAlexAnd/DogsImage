@@ -2,9 +2,11 @@ package com.example.dogsimage;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
@@ -29,6 +31,26 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
         viewModel.loadDogImage();
+        viewModel.getIsLoading().observe(this, new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean loading) {
+                if (loading){
+                    progressBar.setVisibility(View.VISIBLE);
+                }
+                else {
+                    progressBar.setVisibility(View.INVISIBLE);
+                }
+            }
+        });
+
+        viewModel.getIsError().observe(this, new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean error) {
+                if (error) {
+                    Toast.makeText(MainActivity.this, R.string.error_loading, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         viewModel.getDogImageMutableLiveData().observe(this, new Observer<DogImage>() {
             @Override
@@ -38,15 +60,21 @@ public class MainActivity extends AppCompatActivity {
 
                            .load(dogImage.getMessage())// получаем адрес картинки из нашего класса и сообщением с url
                            .into(imageDogView); // устанавливаем картинку в нужный нам view
-                   Log.d(TAG, dogImage.getMessage());
-                   Log.d(TAG, dogImage.getStatus());
+//                   Log.d(TAG, dogImage.getMessage());
+//                   Log.d(TAG, dogImage.getStatus());
                } catch (Exception e) {
-                   Log.d(TAG, dogImage.getMessage());
-                   Log.d(TAG, dogImage.getStatus());
-                   Log.d(TAG, e.toString());
+//                   Log.d(TAG, dogImage.getMessage());
+//                   Log.d(TAG, dogImage.getStatus());
+//                   Log.d(TAG, e.toString());
 
                }
 
+            }
+        });
+        buttonNextDog.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                viewModel.loadDogImage();
             }
         });
 

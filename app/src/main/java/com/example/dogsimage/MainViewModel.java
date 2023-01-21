@@ -21,6 +21,7 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.functions.Action;
 import io.reactivex.rxjava3.functions.Consumer;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
@@ -35,9 +36,21 @@ public class MainViewModel extends AndroidViewModel {
 
     private MutableLiveData<DogImage> dogImageMutableLiveData = new MutableLiveData<>();
 
+    private MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
+
+    private MutableLiveData<Boolean> isError = new MutableLiveData<>();
+
     public MainViewModel(@NonNull Application application) { // Переопределяем
         super(application);
 
+    }
+
+    public LiveData<Boolean> getIsLoading() {
+        return isLoading;
+    }
+
+    public LiveData<Boolean> getIsError() {
+        return isError;
     }
 
     public LiveData<DogImage> getDogImageMutableLiveData() {
@@ -45,12 +58,32 @@ public class MainViewModel extends AndroidViewModel {
     }
 
     public void loadDogImage() {
+
         Disposable disposable = loadDogImageRx()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe(new Consumer<Disposable>() { // реагируем на начала момента подписки
+                    @Override
+                    public void accept(Disposable disposable) throws Throwable {
+                        isLoading.setValue(true);
+                    }
+                })
+                .doAfterTerminate(new Action() { // реагируем на окончание загрузки
+                    @Override
+                    public void run() throws Throwable {
+                        isLoading.setValue(false);
+                    }
+                })
+                .doOnError(new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Throwable {
+                        isError.setValue(true);
+                    }
+                })
                 .subscribe(new Consumer<DogImage>() {
                     @Override
                     public void accept(DogImage image) throws Throwable {
+
                         dogImageMutableLiveData.setValue(image);
                     }
                 }, new Consumer<Throwable>() {
@@ -69,35 +102,7 @@ public class MainViewModel extends AndroidViewModel {
     }
 
     private Single<DogImage> loadDogImageRx() {
-        return Single.fromCallable(new Callable<DogImage>() {
-            @Override
-            public DogImage call() throws Exception {
-
-                URL url = new URL(BASE_URL); // создаем адрес
-                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection(); // открываем интернет соединение
-                InputStream inputStream = urlConnection.getInputStream(); // Создаем поток ввода. Теперь можем читать данные побайтово.
-                //Байт - в символ, Символы - в строки
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream); // теперь можем считывать символы
-                BufferedReader bufferedReader = new BufferedReader(inputStreamReader); // теперь можем считывать строки
-
-
-                StringBuilder data = new StringBuilder();
-                String result;
-                do {
-                    result = bufferedReader.readLine();
-                    if (result != null) {
-                        data.append(result);
-                    }
-                } while (result != null);
-
-                JSONObject jsonObject = new JSONObject(data.toString());
-                String status = jsonObject.getString(KEY_STATUS);
-                String message = jsonObject.getString(KEY_MESSAGE);
-                return new DogImage(status, message);
-                //Log.d(TAG, dogImage.toString());
-
-
-            }
-        });
+        return ApiFactory.getApiService().loadDogImage();
     }
+
 }

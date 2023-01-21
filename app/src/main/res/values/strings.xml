@@ -2,4 +2,5 @@
     <string name="app_name">DogsImage</string>
     <string name="button_next_dog">Следующая собачка 🐕‍</string>
     <string name="image_dog">ImageDog</string>
+    <string name="error_loading">Ошибка загрузки картинки</string>
 </resources>
